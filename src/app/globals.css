@@ -1,0 +1,308 @@
+@import "tailwindcss";
+
+@theme {
+  /* Thomas Shelby / Peaky Blinders Theme */
+  --color-background: #050505;
+  --color-surface: #121212;
+  --color-primary: #C6A87C;
+  --color-primary-glow: rgba(198, 168, 124, 0.3);
+  --color-secondary: #2C2C2C;
+  --color-accent: #4A0404;
+  --font-display: var(--font-playfair), serif;
+  --font-body: var(--font-inter), sans-serif;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-pulse-slow: pulse-glow 4s ease-in-out infinite;
+  --animate-smoke: smoke 8s ease-in-out infinite;
+}
+
+:root {
+  --glass-border: rgba(198, 168, 124, 0.2);
+  --glass-bg: rgba(5, 5, 5, 0.85);
+}
+
+select,
+select option {
+  background-color: #1a1a1f;
+  color: #fff;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: #e5e5e5;
+    font-family: var(--font-body);
+    overflow-x: hidden;
+    min-height: 100vh;
+    background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.4));
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-primary);
+  }
+}
+
+@layer components {
+
+  /* Glass Panel */
+  .glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+    border-radius: 4px;
+  }
+
+  .text-glow {
+    text-shadow: 0 0 15px var(--color-primary-glow);
+  }
+
+  .box-glow {
+    box-shadow: 0 0 20px rgba(198, 168, 124, 0.1);
+  }
+
+  /* ========== BUTTONS ========== */
+  .shelby-button {
+    background: #0c0c0c;
+    border: 1.5px solid #5e4b2a;
+    color: #c6a87c;
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-weight: 700;
+    font-size: 11px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    padding: 10px 24px;
+    z-index: 1;
+    border-radius: 50px;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.6);
+  }
+
+  .shelby-button:hover {
+    border-color: #c6a87c;
+    color: #fff;
+    box-shadow: 0 0 12px rgba(198, 168, 124, 0.25), 0 4px 8px rgba(0, 0, 0, 0.6);
+    transform: translateY(-1px);
+  }
+
+  .shelby-button-filled {
+    background: linear-gradient(180deg, #c6a87c 0%, #8c7042 100%);
+    color: #050505;
+    border: 1px solid #f9eebd;
+    font-family: var(--font-display);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    box-shadow: 0 4px 15px rgba(198, 168, 124, 0.4);
+    transition: all 0.3s ease;
+    padding: 12px 32px;
+    border-radius: 50px;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+  }
+
+  .shelby-button-filled:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 6px 20px rgba(198, 168, 124, 0.6);
+    transform: translateY(-2px);
+  }
+
+  /* ========== VINTAGE PAPER CARD ========== */
+  .vintage-paper {
+    background-color: #f0e4c4;
+    background-image:
+      linear-gradient(#d4be8c 1px, transparent 1px),
+      linear-gradient(90deg, #d4be8c 1px, transparent 1px);
+    background-size: 22px 22px;
+    box-shadow:
+      0 0 0 1px #8c7042,
+      inset 0 0 40px rgba(71, 58, 40, 0.15),
+      8px 8px 25px rgba(0, 0, 0, 0.5);
+    border-radius: 4px;
+    position: relative;
+    color: #1a1a1a;
+  }
+
+  /* Ledger label - removed */
+
+  /* Paper noise overlay */
+  .vintage-paper::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    mix-blend-mode: multiply;
+    border-radius: 4px;
+  }
+
+  /* ========== GOLD BAR (Featured Games) ========== */
+  .gold-bar {
+    background: linear-gradient(180deg,
+        #c6a87c 0%,
+        #f0deb0 15%,
+        #d4b068 40%,
+        #99732b 60%,
+        #c6a87c 100%);
+    border: 1px solid #5e4319;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.6),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+      0 4px 8px rgba(0, 0, 0, 0.4),
+      0 2px 0 #5e4319;
+    color: #2e1c05;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+    position: relative;
+    transition: all 0.2s ease;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .gold-bar:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.6),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+      0 6px 12px rgba(0, 0, 0, 0.5),
+      0 2px 0 #5e4319;
+  }
+
+  /* ========== SELLER SIGN - removed ========== */
+
+  /* ========== RECOMMENDED BADGE ========== */
+  .rec-badge {
+    display: inline-block;
+    background: #1a7a3a;
+    color: #fff;
+    font-family: var(--font-body);
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 8px;
+    letter-spacing: 0.15em;
+    padding: 3px 8px;
+    border-radius: 2px;
+  }
+
+  /* ========== PRICE STAMP ========== */
+  .price-stamp {
+    background: #1a1a1a;
+    color: #e0c296;
+    font-family: var(--font-body);
+    font-weight: 800;
+    font-size: 15px;
+    padding: 6px 14px;
+    border: 1px solid #333;
+  }
+
+  /* ========== INSPECT BUTTON - removed, using inline styles ========== */
+
+  /* ========== REVIEW CARD ========== */
+  .review-card {
+    background: #0a0a0a;
+    border: 1.5px solid #3d3020;
+    border-radius: 8px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .review-card:hover {
+    border-color: #8c7042;
+  }
+
+  /* Input styling */
+  .vintage-input {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--color-primary);
+    color: var(--color-primary);
+    font-family: var(--font-body);
+  }
+
+  .vintage-input:focus {
+    outline: none;
+    box-shadow: 0 0 10px var(--color-primary-glow);
+  }
+}
+
+/* Keyframes */
+@keyframes smoke {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(1);
+  }
+
+  50% {
+    opacity: 0.5;
+    transform: translateY(-20px) scale(1.1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-40px) scale(1.2);
+  }
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    opacity: 0.6;
+    box-shadow: 0 0 10px var(--color-primary-glow);
+  }
+
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 25px var(--color-primary-glow);
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #050505;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border: 1px solid #444;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary);
+}
+
+/* Hide Next.js Dev Indicator */
+[data-nextjs-toast],
+.nextjs-toast-errors-parent,
+#nextjs-dev-indicator {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  z-index: -9999 !important;
+  pointer-events: none !important;
+}
