@@ -8,20 +8,7 @@ const STORAGE_KEY_GAMES = "howie_admin_games";
 const STORAGE_KEY_PRODUCTS = "howie_admin_products";
 const STORAGE_KEY_REVIEWS = "howie_admin_reviews";
 
-function loadFromStorage<T>(key: string, fallback: T[]): T[] {
-  if (typeof window === "undefined") return fallback;
-  try {
-    const data = localStorage.getItem(key);
-    if (data) return JSON.parse(data);
-  } catch { }
-  return fallback;
-}
 
-function saveToStorage<T>(key: string, data: T[]) {
-  try {
-    localStorage.setItem(key, JSON.stringify(data));
-  } catch { }
-}
 
 // ========== EDIT TYPES ==========
 interface EditGame {
@@ -195,9 +182,9 @@ export function getReviews(): Review[] {
 
 // ========== COMPONENT ==========
 export default function AdminPage() {
-  const [gameList, setGameList] = useState<Game[]>([]);
-  const [productList, setProductList] = useState<Product[]>([]);
-  const [reviewList, setReviewList] = useState<Review[]>([]);
+  const [gameList, setGameList] = useState<Game[]>(defaultGames);
+  const [productList, setProductList] = useState<Product[]>(defaultProducts);
+  const [reviewList, setReviewList] = useState<Review[]>(defaultReviews);
   const [activeTab, setActiveTab] = useState<"games" | "cheats" | "reviews">("games");
   const [loaded, setLoaded] = useState(false);
 
@@ -219,29 +206,9 @@ export default function AdminPage() {
   // Selected game filter for cheats tab
   const [filterGameId, setFilterGameId] = useState("");
 
-  // Load from localStorage on mount
   useEffect(() => {
-    setGameList(loadFromStorage<Game>(STORAGE_KEY_GAMES, [...defaultGames]));
-    setProductList(loadFromStorage<Product>(STORAGE_KEY_PRODUCTS, [...defaultProducts]));
-    setReviewList(loadFromStorage<Review>(STORAGE_KEY_REVIEWS, [...defaultReviews]));
     setLoaded(true);
   }, []);
-
-  // Auto-save to localStorage on every change
-  useEffect(() => {
-    if (!loaded) return;
-    saveToStorage(STORAGE_KEY_GAMES, gameList);
-  }, [gameList, loaded]);
-
-  useEffect(() => {
-    if (!loaded) return;
-    saveToStorage(STORAGE_KEY_PRODUCTS, productList);
-  }, [productList, loaded]);
-
-  useEffect(() => {
-    if (!loaded) return;
-    saveToStorage(STORAGE_KEY_REVIEWS, reviewList);
-  }, [reviewList, loaded]);
 
   const filteredProducts = filterGameId
     ? productList.filter(p => p.gameId === filterGameId)
@@ -396,15 +363,7 @@ export default function AdminPage() {
     setSaveMsg("✅ Файл скачан! Замени src/lib/products-data.ts этим файлом и запусти npm run build");
   }, [gameList, productList, reviewList]);
 
-  // ========== RESET TO DEFAULTS ==========
-  const resetToDefaults = () => {
-    if (confirm("Сбросить все данные к значениям из products-data.ts? Все изменения в localStorage будут потеряны.")) {
-      setGameList([...defaultGames]);
-      setProductList([...defaultProducts]);
-      setReviewList([...defaultReviews]);
-      setSaveMsg("🔄 Данные сброшены к значениям по умолчанию");
-    }
-  };
+
 
   if (!loaded) {
     return <div className="min-h-screen pt-24 pb-12 bg-black/95 flex items-center justify-center"><span className="text-white text-xl">Загрузка...</span></div>;
@@ -419,15 +378,10 @@ export default function AdminPage() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-black text-white">⚙️ ADMIN PANEL</h1>
-            <p className="text-sm text-gray-500 mt-1">Данные сохраняются автоматически в браузере. Скачай файл для деплоя.</p>
+            <p className="text-sm text-gray-500 mt-1">Скачай файл для деплоя.</p>
           </div>
           <div className="flex gap-3">
-            <button
-              onClick={resetToDefaults}
-              className="px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 font-bold transition-all border border-white/10"
-            >
-              🔄 Сброс
-            </button>
+
             <button
               onClick={downloadDataFile}
               className="px-6 py-3 rounded-xl bg-green-600 hover:bg-green-500 text-white font-bold transition-all shadow-lg shadow-green-600/20"
@@ -446,11 +400,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Auto-save indicator */}
-        <div className="mb-6 p-3 rounded-xl bg-blue-500/5 border border-blue-500/20 text-xs text-blue-400 font-medium flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-          Все изменения автоматически сохраняются в localStorage браузера
-        </div>
+
 
         {/* Stats */}
         <div className="grid grid-cols-4 gap-4 mb-8">
