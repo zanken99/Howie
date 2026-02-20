@@ -1,20 +1,27 @@
-import { getProducts } from "@/lib/products-data";
+import { getGames, getProductsByGame } from "@/lib/products-data";
+import { GameContent } from "@/components/GameContent";
+import { notFound } from "next/navigation";
 import { slugify } from "@/lib/utils";
-import { GamePageClient } from "./client";
 
-interface GamePageProps {
-    params: Promise<{
-        slug: string;
-    }>;
+export async function generateStaticParams() {
+    const games = getGames();
+    return games.map((game) => ({
+        slug: slugify(game.name),
+    }));
 }
 
-export function generateStaticParams() {
-    const products = getProducts();
-    const slugs = new Set(products.map(p => slugify(p.game)));
-    return Array.from(slugs).map(slug => ({ slug }));
-}
-
-export default async function GamePage({ params }: GamePageProps) {
+export default async function GamePage({ params }: { params: Promise<{ slug: string }> }) {
+    const games = getGames();
     const { slug } = await params;
-    return <GamePageClient slug={slug} />;
+    const game = games.find(g => slugify(g.name) === slug);
+
+    if (!game) {
+        notFound();
+    }
+
+    // getProductsByGame expects name, not ID, based on its signature in products-data.ts
+    // export function getProductsByGame(game: string): Product[]
+    const products = getProductsByGame(game.name);
+
+    return <GameContent game={game} products={products} />;
 }

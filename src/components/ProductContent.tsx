@@ -7,6 +7,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n";
 import { CheckoutModal } from "@/components/CheckoutModal";
+import { isVideoUrl } from "@/lib/video-utils";
+import { Play, Search } from "lucide-react";
+import { createPortal } from "react-dom";
 
 interface ProductContentProps {
     product: Product;
@@ -41,15 +44,6 @@ export function ProductContent({ product }: ProductContentProps) {
         return () => window.removeEventListener('keydown', handleKey);
     }, [lightboxIndex, closeLightbox, prevImage, nextImage]);
 
-    // Region pricing
-    const hasRegions = (product.regionPricing?.length ?? 0) > 0;
-    const [selectedRegionIdx, setSelectedRegionIdx] = useState(0);
-    const regionMultiplier = hasRegions
-        ? (product.regionPricing![selectedRegionIdx]?.priceMultiplier ?? 1)
-        : 1;
-
-    const getRegionalPrice = (basePrice: number) => Math.round(basePrice * regionMultiplier);
-
     return (
         <div className="min-h-screen pt-24 pb-12 bg-[var(--color-background)]">
             <CheckoutModal
@@ -57,8 +51,6 @@ export function ProductContent({ product }: ProductContentProps) {
                 onClose={() => setIsCheckoutOpen(false)}
                 product={product}
                 selectedTier={selectedTier}
-                regionMultiplier={regionMultiplier}
-                regionLabel={hasRegions ? product.regionPricing![selectedRegionIdx]?.label : undefined}
             />
             <div className="max-w-7xl mx-auto px-4 sm:px-6">
 
@@ -129,80 +121,136 @@ export function ProductContent({ product }: ProductContentProps) {
                                     animate={{ opacity: 1, y: 0 }}
                                     className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6"
                                 >
-                                    {product.galleryImages.map((img, idx) => (
-                                        <div
-                                            key={idx}
-                                            className="aspect-video rounded-lg overflow-hidden border border-white/10 relative group cursor-pointer hover:border-[var(--color-primary)]/50 transition-colors"
-                                            onClick={() => setLightboxIndex(idx)}
-                                        >
-                                            <div className="absolute inset-0 bg-gray-800 animate-pulse" />
-                                            <img src={img} alt={`Gallery ${idx}`} className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
-                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                                                <span className="text-white/0 group-hover:text-white/80 transition-colors text-2xl">🔍</span>
+                                    {product.galleryImages.map((img, idx) => {
+                                        const isVideo = isVideoUrl(img);
+                                        const isYoutube = img.includes('youtube.com') || img.includes('youtu.be');
+                                        return (
+                                            <div
+                                                key={idx}
+                                                className="aspect-video rounded-lg overflow-hidden border border-white/10 relative group cursor-pointer hover:border-[var(--color-primary)]/50 transition-colors bg-[#0a0a0a]"
+                                                onClick={() => setLightboxIndex(idx)}
+                                            >
+                                                <div className="absolute inset-0 bg-gray-800 animate-pulse" />
+                                                {isVideo && !isYoutube ? (
+                                                    <video src={img} className="absolute inset-0 w-full h-full object-cover opacity-80 pointer-events-none" muted autoPlay loop playsInline />
+                                                ) : isYoutube ? (
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-black">
+                                                        <Play className="w-12 h-12 text-red-600 fill-current" />
+                                                    </div>
+                                                ) : (
+                                                    <img src={img} alt={`Gallery ${idx}`} className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
+                                                )}
+                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                                    {isVideo || isYoutube ? (
+                                                        <Play className="w-10 h-10 text-white/80 fill-current" />
+                                                    ) : (
+                                                        <Search className="w-8 h-8 text-white/0 group-hover:text-white/80 transition-colors" />
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </motion.div>
                             )}
 
                             {/* Lightbox Modal */}
                             <AnimatePresence>
-                                {lightboxIndex !== null && product.galleryImages && (
-                                    <motion.div
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-                                        transition={{ duration: 0.2 }}
-                                        className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-md"
-                                        onClick={closeLightbox}
-                                    >
-                                        {/* Close button */}
-                                        <button
-                                            onClick={closeLightbox}
-                                            className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white text-xl transition-colors z-10"
-                                        >
-                                            ✕
-                                        </button>
+                                {lightboxIndex !== null && product.galleryImages && (() => {
+                                    const currentMedia = product.galleryImages[lightboxIndex];
+                                    const isVideo = isVideoUrl(currentMedia);
+                                    const isYoutube = currentMedia.includes('youtube.com') || currentMedia.includes('youtu.be');
+                                    let youtubeId = '';
+                                    if (isYoutube) {
+                                        const match = currentMedia.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/);
+                                        if (match) youtubeId = match[1];
+                                    }
 
-                                        {/* Prev arrow */}
-                                        {product.galleryImages.length > 1 && (
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); prevImage(); }}
-                                                className="absolute left-4 md:left-8 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white text-2xl transition-all hover:scale-110 z-10"
+                                    return (
+                                        <>
+                                            {/* Background and Clicks */}
+                                            <motion.div
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                exit={{ opacity: 0 }}
+                                                transition={{ duration: 0.2 }}
+                                                className="fixed inset-0 z-[9900] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 md:p-12"
+                                                onClick={closeLightbox}
                                             >
-                                                ←
-                                            </button>
-                                        )}
+                                                {/* Prev arrow */}
+                                                {product.galleryImages.length > 1 && (
+                                                    <button
+                                                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); prevImage(); }}
+                                                        className="absolute left-4 md:left-8 w-12 h-12 rounded-full bg-black/50 hover:bg-black/80 flex items-center justify-center text-white text-2xl transition-all hover:scale-110 border border-white/10 backdrop-blur-sm z-[9999]"
+                                                    >
+                                                        ←
+                                                    </button>
+                                                )}
 
-                                        {/* Image */}
-                                        <motion.img
-                                            key={lightboxIndex}
-                                            initial={{ opacity: 0, scale: 0.8 }}
-                                            animate={{ opacity: 1, scale: 1 }}
-                                            exit={{ opacity: 0, scale: 0.8 }}
-                                            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                                            src={product.galleryImages[lightboxIndex]}
-                                            alt={`Gallery ${lightboxIndex}`}
-                                            className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg shadow-2xl"
-                                            onClick={(e) => e.stopPropagation()}
-                                        />
+                                                {/* Media Container */}
+                                                <motion.div
+                                                    key={lightboxIndex}
+                                                    initial={{ opacity: 0, scale: 0.95 }}
+                                                    animate={{ opacity: 1, scale: 1 }}
+                                                    exit={{ opacity: 0, scale: 0.95 }}
+                                                    transition={{ duration: 0.2 }}
+                                                    className="relative w-full max-w-5xl max-h-full flex items-center justify-center z-[9950]"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    {isYoutube && youtubeId ? (
+                                                        <iframe
+                                                            className="w-full aspect-video rounded-xl shadow-2xl"
+                                                            src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1`}
+                                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                            allowFullScreen
+                                                        />
+                                                    ) : isVideo ? (
+                                                        <video
+                                                            src={currentMedia}
+                                                            className="max-h-[85vh] max-w-full rounded-xl shadow-2xl outline-none bg-black"
+                                                            controls
+                                                            autoPlay
+                                                            playsInline
+                                                        />
+                                                    ) : (
+                                                        <img
+                                                            src={currentMedia}
+                                                            alt={`Gallery ${lightboxIndex}`}
+                                                            className="max-h-[85vh] max-w-full object-contain rounded-xl shadow-2xl"
+                                                        />
+                                                    )}
+                                                </motion.div>
 
-                                        {/* Next arrow */}
-                                        {product.galleryImages.length > 1 && (
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); nextImage(); }}
-                                                className="absolute right-4 md:right-8 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white text-2xl transition-all hover:scale-110 z-10"
-                                            >
-                                                →
-                                            </button>
-                                        )}
+                                                {/* Next arrow */}
+                                                {product.galleryImages.length > 1 && (
+                                                    <button
+                                                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); nextImage(); }}
+                                                        className="absolute right-4 md:right-8 w-12 h-12 rounded-full bg-black/50 hover:bg-black/80 flex items-center justify-center text-white text-2xl transition-all hover:scale-110 border border-white/10 backdrop-blur-sm z-[9999]"
+                                                    >
+                                                        →
+                                                    </button>
+                                                )}
 
-                                        {/* Counter */}
-                                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/60 text-sm font-medium tracking-wider">
-                                            {lightboxIndex + 1} / {product.galleryImages.length}
-                                        </div>
-                                    </motion.div>
-                                )}
+                                                {/* Counter */}
+                                                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-black/50 backdrop-blur-sm border border-white/10 z-[9999]">
+                                                    <span className="text-white/80 text-sm font-bold tracking-wider">
+                                                        {lightboxIndex + 1} / {product.galleryImages.length}
+                                                    </span>
+                                                </div>
+                                            </motion.div>
+
+                                            {/* Close button (Fully independent, rendered in portal to bypass all stacking contexts) */}
+                                            {typeof document !== 'undefined' && createPortal(
+                                                <button
+                                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); closeLightbox(); }}
+                                                    className="fixed top-4 right-4 md:top-6 md:right-6 w-12 h-12 rounded-full bg-black/80 hover:bg-red-500 flex items-center justify-center text-white text-xl transition-all border border-white/10 backdrop-blur-md z-[999999] shadow-2xl cursor-pointer pointer-events-auto"
+                                                >
+                                                    ✕
+                                                </button>,
+                                                document.body
+                                            )}
+                                        </>
+                                    );
+                                })()}
                             </AnimatePresence>
 
                             {/* Features List */}
@@ -231,51 +279,23 @@ export function ProductContent({ product }: ProductContentProps) {
                         <div className="glass-panel p-8 border-[var(--color-primary)]/20 shadow-[0_0_50px_-20px_rgba(59,130,246,0.2)]">
                             <h3 className="text-xl font-bold text-white mb-6">{t("prod.choose_tier")}</h3>
 
-                            {/* Region Selector */}
-                            {hasRegions && (
-                                <div className="mb-6">
-                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-3">
-                                        🌍 {t("prod.region") || "Выберите регион"}
-                                    </label>
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                        {product.regionPricing!.map((rp, idx) => (
-                                            <button
-                                                key={rp.region}
-                                                onClick={() => setSelectedRegionIdx(idx)}
-                                                className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${selectedRegionIdx === idx
-                                                    ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-white shadow-lg'
-                                                    : 'border-white/10 bg-white/5 text-gray-400 hover:border-white/30 hover:bg-white/10'
-                                                    }`}
-                                            >
-                                                <span className="text-sm font-bold uppercase tracking-wider">{rp.region}</span>
-                                                <span className="text-[10px] text-gray-500">{rp.label}</span>
-                                                {rp.priceMultiplier !== 1 && (
-                                                    <span className="text-[9px] text-[var(--color-primary)]">×{rp.priceMultiplier}</span>
-                                                )}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
                             <div className="grid grid-cols-3 gap-4 mb-8">
-                                {product.priceTiers.map((tier) => (
+                                {product.priceTiers.map((tier, idx) => (
                                     <button
-                                        key={tier.label}
+                                        key={idx}
                                         onClick={() => setSelectedTier(tier)}
-                                        className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 relative overflow-hidden ${selectedTier.duration === tier.duration
-                                            ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-white shadow-lg'
-                                            : 'border-white/10 bg-white/5 text-gray-400 hover:border-white/30 hover:bg-white/10'
+                                        className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-2 ${selectedTier === tier
+                                            ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10 shadow-[0_0_20px_rgba(59,130,246,0.2)]'
+                                            : 'border-white/10 hover:border-white/30 bg-white/5 hover:bg-white/10'
                                             }`}
                                     >
-                                        {selectedTier.duration === tier.duration && (
-                                            <div className="absolute top-0 right-0 p-1">
-                                                <div className="w-2 h-2 rounded-full bg-[var(--color-primary)]" />
-                                            </div>
-                                        )}
-                                        <span className="text-sm font-bold uppercase tracking-wider">{formatDuration(tier.duration, t)}</span>
-                                        <span className={`text-xl font-black ${selectedTier.duration === tier.duration ? 'text-[var(--color-primary)]' : ''}`}>
-                                            {formatPrice(getRegionalPrice(tier.price))}
+                                        <span className={`text-sm font-bold uppercase tracking-widest ${selectedTier === tier ? 'text-white' : 'text-gray-400'
+                                            }`}>
+                                            {formatDuration(tier.duration, t)}
+                                        </span>
+                                        <span className={`text-2xl font-[family-name:var(--font-playfair)] ${selectedTier === tier ? 'text-[var(--color-primary)] text-glow' : 'text-white'
+                                            }`}>
+                                            {formatPrice(tier.price, tier.priceUsd)}
                                         </span>
                                     </button>
                                 ))}
@@ -284,14 +304,9 @@ export function ProductContent({ product }: ProductContentProps) {
                             <div className="flex items-center justify-between gap-6 p-4 bg-black/20 rounded-xl mb-6">
                                 <div className="text-sm text-gray-400">
                                     {t("prod.selected_tier")} <span className="text-white font-bold">{formatDuration(selectedTier.duration, t)}</span>
-                                    {hasRegions && (
-                                        <span className="text-gray-500 ml-2">
-                                            ({product.regionPricing![selectedRegionIdx]?.label})
-                                        </span>
-                                    )}
                                 </div>
                                 <div className="text-3xl font-black text-white">
-                                    {formatPrice(getRegionalPrice(selectedTier.price))}
+                                    {formatPrice(selectedTier.price, selectedTier.priceUsd)}
                                 </div>
                             </div>
 

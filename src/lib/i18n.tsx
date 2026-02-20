@@ -8,7 +8,7 @@ interface I18nContextType {
     language: Language;
     setLanguage: (lang: Language) => void;
     t: (key: string) => string;
-    formatPrice: (amountInRub: number) => string;
+    formatPrice: (amountInRub: number, exactUsd?: number) => string;
     exchangeRate: number;
 }
 
@@ -293,21 +293,51 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
             setLanguage(saved);
         }
 
-        // Fetch exchange rate once on load
+        // Auto-detect region if first time
+        const detectRegion = async () => {
+            if (saved) return; // Already chose a language
+
+            try {
+                // Check browser language
+                const browserLang = navigator.language.toLowerCase();
+                const isRuBrowser = browserLang.includes('ru') || browserLang.includes('be') || browserLang.includes('kk') || browserLang.includes('uk');
+
+                // Check IP location
+                const res = await fetch("https://ipapi.co/json/");
+                const data = await res.json();
+
+                const cisCountries = ['RU', 'BY', 'KZ', 'UA', 'AM', 'AZ', 'KG', 'MD', 'TJ', 'UZ'];
+                const isCisIp = data.country && cisCountries.includes(data.country);
+
+                // If neither IP nor Browser is RU/CIS, set to English
+                if (!isCisIp && !isRuBrowser) {
+                    setLanguage("en");
+                    localStorage.setItem("language", "en");
+                    console.log("Auto-detected World region (en)");
+                } else {
+                    setLanguage("ru");
+                    localStorage.setItem("language", "ru");
+                    console.log("Auto-detected RU/CIS region (ru)");
+                }
+            } catch (err) {
+                console.error("Failed to detect region, defaulting to ru", err);
+            }
+        };
+
         const fetchRate = async () => {
             try {
                 const res = await fetch("https://api.frankfurter.app/latest?from=RUB&to=USD");
                 const data = await res.json();
                 if (data.rates && data.rates.USD) {
                     setExchangeRate(data.rates.USD);
-                    console.log(`Updated exchange rate: 1 RUB = ${data.rates.USD} USD`);
                 }
             } catch (err) {
-                console.error("Failed to fetch exchange rate, using fallback:", err);
+                console.error("Failed to fetch exchange rate", err);
             }
         };
 
         fetchRate();
+        detectRegion();
     }, []);
 
     const handleSetLanguage = (lang: Language) => {
@@ -319,10 +349,15 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
         return translations[language][key] || key;
     };
 
-    const formatPrice = (amountInRub: number) => {
+    const formatPrice = (amountInRub: number, exactUsd?: number) => {
         if (language === "ru") {
             return `${amountInRub} ₽`;
         } else {
+            // If we have an exact USD price defined, use it
+            if (exactUsd !== undefined) {
+                return `$${exactUsd.toFixed(2)}`;
+            }
+            // Otherwise fallback to dynamic conversion
             const converted = amountInRub * exchangeRate;
             return `$${converted.toFixed(2)}`;
         }

@@ -1,14 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Product, Game, Review, PriceTier, RegionPrice, products as defaultProducts, games as defaultGames, reviews as defaultReviews } from "@/lib/products-data";
-
-// ========== STORAGE KEYS ==========
-const STORAGE_KEY_GAMES = "howie_admin_games";
-const STORAGE_KEY_PRODUCTS = "howie_admin_products";
-const STORAGE_KEY_REVIEWS = "howie_admin_reviews";
-
-
+import { Product, Game, Review, PriceTier, products as defaultProducts, games as defaultGames, reviews as defaultReviews } from "@/lib/products-data";
+import { Play } from "lucide-react";
 
 // ========== EDIT TYPES ==========
 interface EditGame {
@@ -32,7 +26,6 @@ interface EditProduct {
   coverImage: string;
   galleryImages: string[];
   priceTiers: PriceTier[];
-  regionPricing: RegionPrice[];
   status: "undetected" | "detected" | "updating";
 }
 
@@ -55,7 +48,6 @@ function toEditProduct(p: Product): EditProduct {
     coverImage: p.coverImage || "",
     galleryImages: [...(p.galleryImages || [])],
     priceTiers: [...p.priceTiers],
-    regionPricing: [...(p.regionPricing || [])],
     status: p.status,
   };
 }
@@ -77,7 +69,6 @@ function fromEditProduct(e: EditProduct): Product {
     coverImage: e.coverImage || undefined,
     galleryImages: e.galleryImages.filter(Boolean),
     priceTiers: e.priceTiers,
-    regionPricing: e.regionPricing.length > 0 ? e.regionPricing : undefined,
     status: e.status,
     lastUpdate: new Date().toLocaleString("ru"),
     createdAt: new Date().toISOString(),
@@ -94,12 +85,7 @@ export interface PriceTier {
   label: string;
   duration: string;
   price: number;
-}
-
-export interface RegionPrice {
-  region: string;
-  label: string;
-  priceMultiplier: number;
+  priceUsd?: number;
 }
 
 export interface Game {
@@ -133,7 +119,6 @@ export interface Product {
   coverImage?: string;
   galleryImages?: string[];
   priceTiers: PriceTier[];
-  regionPricing?: RegionPrice[];
   status: "undetected" | "detected" | "updating";
   lastUpdate: string;
   createdAt: string;
@@ -182,11 +167,10 @@ export function getReviews(): Review[] {
 
 // ========== COMPONENT ==========
 export default function AdminPage() {
-  const [gameList, setGameList] = useState<Game[]>(defaultGames);
-  const [productList, setProductList] = useState<Product[]>(defaultProducts);
-  const [reviewList, setReviewList] = useState<Review[]>(defaultReviews);
+  const [gameList, setGameList] = useState<Game[]>([...defaultGames]);
+  const [productList, setProductList] = useState<Product[]>([...defaultProducts]);
+  const [reviewList, setReviewList] = useState<Review[]>([...defaultReviews]);
   const [activeTab, setActiveTab] = useState<"games" | "cheats" | "reviews">("games");
-  const [loaded, setLoaded] = useState(false);
 
   // Game editing
   const [editGame, setEditGame] = useState<EditGame | null>(null);
@@ -205,10 +189,6 @@ export default function AdminPage() {
 
   // Selected game filter for cheats tab
   const [filterGameId, setFilterGameId] = useState("");
-
-  useEffect(() => {
-    setLoaded(true);
-  }, []);
 
   const filteredProducts = filterGameId
     ? productList.filter(p => p.gameId === filterGameId)
@@ -267,7 +247,6 @@ export default function AdminPage() {
         { label: "", duration: "7d", price: 1500 },
         { label: "", duration: "30d", price: 2500 },
       ],
-      regionPricing: [],
       status: "undetected",
     });
     setIsNewProd(true);
@@ -307,21 +286,7 @@ export default function AdminPage() {
     setEditProd({ ...editProd, priceTiers: editProd.priceTiers.filter((_, i) => i !== idx) });
   };
 
-  // ========== REGION PRICING CRUD ==========
-  const addRegion = () => {
-    if (!editProd) return;
-    setEditProd({ ...editProd, regionPricing: [...editProd.regionPricing, { region: "", label: "", priceMultiplier: 1.0 }] });
-  };
-  const removeRegion = (idx: number) => {
-    if (!editProd) return;
-    setEditProd({ ...editProd, regionPricing: editProd.regionPricing.filter((_, i) => i !== idx) });
-  };
-  const updateRegion = (idx: number, field: keyof RegionPrice, value: string | number) => {
-    if (!editProd) return;
-    const regions = [...editProd.regionPricing];
-    regions[idx] = { ...regions[idx], [field]: field === "priceMultiplier" ? Number(value) : value };
-    setEditProd({ ...editProd, regionPricing: regions });
-  };
+  // ========== REGION PRICING CRUD (REMOVED) ==========
 
   // ========== REVIEW CRUD ==========
   const openNewReview = () => {
@@ -348,26 +313,32 @@ export default function AdminPage() {
     }
   };
 
-  // ========== DOWNLOAD FILE ==========
-  const downloadDataFile = useCallback(() => {
-    const content = generateTsFileContent(gameList, productList, reviewList);
-    const blob = new Blob([content], { type: "text/typescript" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "products-data.ts";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    setSaveMsg("✅ Файл скачан! Замени src/lib/products-data.ts этим файлом и запусти npm run build");
-  }, [gameList, productList, reviewList]);
+  // ========== SAVE DATA TO SERVER ==========
+  const saveDataToServer = async () => {
+    try {
+      setSaveMsg("⏳ Сохранение...");
+      const response = await fetch('/api/save-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          games: gameList,
+          products: productList,
+          reviews: reviewList,
+        }),
+      });
 
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
 
-
-  if (!loaded) {
-    return <div className="min-h-screen pt-24 pb-12 bg-black/95 flex items-center justify-center"><span className="text-white text-xl">Загрузка...</span></div>;
-  }
+      setSaveMsg("✅ Данные успешно сохранены на сервере!");
+    } catch (error) {
+      console.error('Error saving data:', error);
+      setSaveMsg("❌ Ошибка при сохранении данных на сервер.");
+    }
+  };
 
   // ========== RENDER ==========
   return (
@@ -378,15 +349,14 @@ export default function AdminPage() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-black text-white">⚙️ ADMIN PANEL</h1>
-            <p className="text-sm text-gray-500 mt-1">Скачай файл для деплоя.</p>
+            <p className="text-sm text-gray-500 mt-1">Отредактируй данные и нажми кнопку для сохранения на сервере.</p>
           </div>
           <div className="flex gap-3">
-
             <button
-              onClick={downloadDataFile}
+              onClick={saveDataToServer}
               className="px-6 py-3 rounded-xl bg-green-600 hover:bg-green-500 text-white font-bold transition-all shadow-lg shadow-green-600/20"
             >
-              📥 СКАЧАТЬ ФАЙЛ ДАННЫХ
+              💾 СОХРАНИТЬ НА СЕРВЕР
             </button>
           </div>
         </div>
@@ -400,7 +370,11 @@ export default function AdminPage() {
           </div>
         )}
 
-
+        {/* Auto-save indicator */}
+        <div className="mb-6 p-3 rounded-xl bg-blue-500/5 border border-blue-500/20 text-xs text-blue-400 font-medium flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+          Все изменения автоматически сохраняются в localStorage браузера
+        </div>
 
         {/* Stats */}
         <div className="grid grid-cols-4 gap-4 mb-8">
@@ -733,31 +707,19 @@ export default function AdminPage() {
                   <div className="space-y-2">
                     {editProd.priceTiers.map((tier, i) => (
                       <div key={i} className="flex gap-2 items-center">
-                        <input value={tier.duration} onChange={e => updateTierPrice(i, "duration", e.target.value)} className="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm" placeholder="7d / 30d / lifetime" />
-                        <input type="number" value={tier.price} onChange={e => updateTierPrice(i, "price", e.target.value)} className="w-24 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm" placeholder="Цена" />
+                        <input value={tier.duration} onChange={e => updateTierPrice(i, "duration", e.target.value)} className="w-24 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm" placeholder="7d" />
+
+                        <input type="number" value={tier.price} onChange={e => updateTierPrice(i, "price", e.target.value)} className="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm" placeholder="RUB Цена" />
                         <span className="text-gray-500 text-xs">₽</span>
-                        <button onClick={() => removeTier(i)} className="text-red-400 hover:text-red-300">✕</button>
+
+                        <input type="number" step="0.01" value={tier.priceUsd ?? ""} onChange={e => updateTierPrice(i, "priceUsd", e.target.value ? Number(e.target.value) : undefined as any)} className="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm" placeholder="World (USD)" />
+                        <span className="text-gray-500 text-xs">$</span>
+
+                        <button onClick={() => removeTier(i)} className="text-red-400 hover:text-red-300 ml-2">✕</button>
                       </div>
                     ))}
-                    <p className="text-[10px] text-gray-600 mt-1">Формат: 1d = 1 день, 7d = неделя, 30d = месяц, lifetime = навсегда</p>
+                    <p className="text-[10px] text-gray-600 mt-1">Формат длительности: 1d, 7d, 30d, lifetime. Доллары опциональны, но нужны для региона "World".</p>
                     <button onClick={addTier} className="text-sm text-[var(--color-primary)] hover:underline">+ Добавить тариф</button>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm text-gray-400 font-bold block mb-2">🌍 Региональные цены <span className="text-xs text-gray-600 font-normal">(опционально)</span></label>
-                  <p className="text-[10px] text-gray-600 mb-2">Если добавить регионы, покупатель сможет выбрать свой регион, и цена будет умножена на множитель. Если регионов нет — цена одна для всех.</p>
-                  <div className="space-y-2">
-                    {editProd.regionPricing.map((rp, i) => (
-                      <div key={i} className="flex gap-2 items-center">
-                        <input value={rp.region} onChange={e => updateRegion(i, "region", e.target.value)} className="w-20 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm" placeholder="RU" />
-                        <input value={rp.label} onChange={e => updateRegion(i, "label", e.target.value)} className="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm" placeholder="Россия" />
-                        <input type="number" step="0.1" value={rp.priceMultiplier} onChange={e => updateRegion(i, "priceMultiplier", e.target.value)} className="w-20 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm" placeholder="1.0" />
-                        <span className="text-gray-500 text-xs">×</span>
-                        <button onClick={() => removeRegion(i)} className="text-red-400 hover:text-red-300">✕</button>
-                      </div>
-                    ))}
-                    <p className="text-[10px] text-gray-600 mt-1">Код региона (RU, EU, US...) | Название | Множитель цены (1.0 = без изменений)</p>
-                    <button onClick={addRegion} className="text-sm text-[var(--color-primary)] hover:underline">+ Добавить регион</button>
                   </div>
                 </div>
                 <div>
@@ -774,37 +736,75 @@ export default function AdminPage() {
                 </div>
                 {/* Gallery Images Upload */}
                 <div>
-                  <label className="text-sm text-gray-400 font-bold block mb-2">🖼️ Галерея (PNG) <span className="text-xs text-gray-600 font-normal">— фото для страницы товара</span></label>
+                  <label className="text-sm text-gray-400 font-bold block mb-2">🖼️ Галерея (PNG/MP4/WEBM) <span className="text-xs text-gray-600 font-normal">— фото и видео для страницы товара</span></label>
                   <div className="flex flex-wrap gap-2 mb-2">
-                    {editProd.galleryImages.map((img, idx) => (
-                      <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden border border-white/10 group">
-                        <img src={img} alt={`Gallery ${idx}`} className="w-full h-full object-cover" />
-                        <button
-                          onClick={() => setEditProd({ ...editProd, galleryImages: editProd.galleryImages.filter((_, i) => i !== idx) })}
-                          className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-400"
-                        >✕</button>
-                      </div>
-                    ))}
+                    {editProd.galleryImages.map((img, idx) => {
+                      const isVideo = img.startsWith('data:video/') || img.endsWith('.mp4') || img.endsWith('.webm') || img.endsWith('.mov');
+                      return (
+                        <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden border border-white/10 group bg-black/50">
+                          {isVideo ? (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Play className="w-8 h-8 text-white/50 fill-current" />
+                            </div>
+                          ) : (
+                            <img src={img} alt={`Gallery ${idx}`} className="w-full h-full object-cover" />
+                          )}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setEditProd({ ...editProd, galleryImages: editProd.galleryImages.filter((_, i) => i !== idx) });
+                            }}
+                            className="absolute top-0.5 right-0.5 z-10 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] flex justify-center items-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-400"
+                          >✕</button>
+                        </div>
+                      )
+                    })}
                     <label className="w-20 h-20 rounded-lg border-2 border-dashed border-white/20 hover:border-[var(--color-primary)]/50 cursor-pointer transition-colors bg-white/5 flex flex-col items-center justify-center">
                       <span className="text-xl">+</span>
-                      <span className="text-[9px] text-gray-500">PNG</span>
+                      <span className="text-[9px] text-gray-500 text-center px-1">Медиа</span>
                       <input
                         type="file"
-                        accept=".png,image/png"
+                        accept="image/*,video/mp4,video/webm"
                         multiple
                         className="hidden"
-                        onChange={(e) => {
+                        onChange={async (e) => {
                           const files = e.target.files;
-                          if (!files) return;
-                          const newImages = [...editProd.galleryImages];
-                          Array.from(files).forEach(file => {
-                            const reader = new FileReader();
-                            reader.onload = () => {
-                              newImages.push(reader.result as string);
-                              setEditProd(prev => prev ? { ...prev, galleryImages: [...newImages] } : prev);
-                            };
-                            reader.readAsDataURL(file);
-                          });
+                          if (!files || files.length === 0) return;
+
+                          setSaveMsg("⏳ Загрузка файлов...");
+
+                          for (let i = 0; i < files.length; i++) {
+                            const file = files[i];
+                            const formData = new FormData();
+                            formData.append("file", file);
+
+                            try {
+                              const response = await fetch('/api/upload', {
+                                method: 'POST',
+                                body: formData,
+                              });
+
+                              if (response.ok) {
+                                const data = await response.json();
+                                if (data.success) {
+                                  setEditProd(prev => {
+                                    if (!prev) return prev;
+                                    return {
+                                      ...prev,
+                                      galleryImages: [...prev.galleryImages, data.url]
+                                    };
+                                  });
+                                }
+                              }
+                            } catch (err) {
+                              console.error("Error uploading file", err);
+                              alert(`Ошибка при загрузке ${file.name}`);
+                            }
+                          }
+
+                          setSaveMsg("");
                         }}
                       />
                     </label>

@@ -80,7 +80,7 @@ export function ProductCard({ product }: ProductCardProps) {
           <div className="flex flex-col">
             <span className="text-[10px] text-[#666] uppercase tracking-widest font-bold mb-1">{t("prod.from")}</span>
             <span className="text-xl font-[family-name:var(--font-playfair)] text-[#C6A87C]">
-              {formatPrice(product.priceTiers[0].price)}
+              {formatPrice(product.priceTiers[0].price, product.priceTiers[0].priceUsd)}
             </span>
           </div>
           <Link href={`/product/${product.id}`}>

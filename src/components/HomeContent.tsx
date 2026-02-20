@@ -5,33 +5,21 @@ import { slugify } from "@/lib/utils";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Product, Game, Review } from "@/lib/products-data";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useI18n } from "@/lib/i18n";
-import { useProducts } from "@/lib/products-provider";
 
-export function HomeContent() {
+interface HomeContentProps {
+    games: { name: string; count: number }[];
+    recommended: Product[];
+    featuredGames: Game[];
+    reviews: Review[];
+}
+
+export function HomeContent({ games, recommended, featuredGames, reviews }: HomeContentProps) {
     const { t, formatPrice } = useI18n();
-    const { products, featuredGames, reviews } = useProducts();
-
-    // Randomize products for "Recommended" section
-    const recommended = useMemo(() => [...products].sort(() => 0.5 - Math.random()), [products]);
-
-    // Group products by Game
-    const games = useMemo(() => {
-        const gamesMap = new Map<string, number>();
-        products.forEach(p => {
-            const count = gamesMap.get(p.game) || 0;
-            gamesMap.set(p.game, count + 1);
-        });
-        return Array.from(gamesMap.entries()).map(([name, count]) => ({ name, count }));
-    }, [products]);
-
     const [currentIndex, setCurrentIndex] = useState(0);
     const [reviewIndex, setReviewIndex] = useState(0);
     const [featuredPage, setFeaturedPage] = useState(0);
-
-    // NOTE: keep the variable name "recommended" for the rest of the component
-    // The 'games' and 'featuredGames' and 'reviews' vars are now from useMemo/provider
 
     // Auto-scroll carousel
     useEffect(() => {

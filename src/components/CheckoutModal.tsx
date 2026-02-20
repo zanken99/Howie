@@ -11,11 +11,9 @@ interface CheckoutModalProps {
     onClose: () => void;
     product: Product;
     selectedTier: PriceTier;
-    regionMultiplier?: number;
-    regionLabel?: string;
 }
 
-export function CheckoutModal({ isOpen, onClose, product, selectedTier, regionMultiplier = 1, regionLabel }: CheckoutModalProps) {
+export function CheckoutModal({ isOpen, onClose, product, selectedTier }: CheckoutModalProps) {
     const { t, formatPrice } = useI18n();
     const [quantity, setQuantity] = useState(1);
 
@@ -31,10 +29,12 @@ export function CheckoutModal({ isOpen, onClose, product, selectedTier, regionMu
         };
     }, [isOpen]);
 
-    const basePrice = Math.round(selectedTier.price * regionMultiplier);
-    const total = basePrice * quantity;
+    const basePrice = selectedTier.price;
+    const basePriceUsd = selectedTier.priceUsd;
 
-    const orderText = `${product.name} — ${formatDuration(selectedTier.duration, t)} x${quantity}${regionLabel ? ` (${regionLabel})` : ''}`;
+    // Total is calculated within formatPrice as it needs to handle currency switching
+
+    const orderText = `${product.name} — ${formatDuration(selectedTier.duration, t)} x${quantity}`;
 
     return (
         <AnimatePresence>
@@ -74,12 +74,6 @@ export function CheckoutModal({ isOpen, onClose, product, selectedTier, regionMu
                                     <span className="text-gray-500 uppercase tracking-wider">{t("checkout.sub")}</span>
                                     <span className="text-white font-medium">{formatDuration(selectedTier.duration, t)}</span>
                                 </div>
-                                {regionLabel && (
-                                    <div className="flex justify-between items-center text-sm border-b border-white/5 pb-2">
-                                        <span className="text-gray-500 uppercase tracking-wider">🌍 {t("checkout.region") || "Регион"}</span>
-                                        <span className="text-[var(--color-primary)] font-bold">{regionLabel}</span>
-                                    </div>
-                                )}
                             </div>
 
                             {/* Quantity */}
@@ -108,11 +102,11 @@ export function CheckoutModal({ isOpen, onClose, product, selectedTier, regionMu
                             <div className="space-y-2 pt-2">
                                 <div className="flex justify-between items-center text-[10px] text-gray-500 uppercase tracking-widest">
                                     <span>{t("checkout.price")}</span>
-                                    <span className="font-bold text-[var(--color-primary)]">{formatPrice(basePrice * quantity)}</span>
+                                    <span className="font-bold text-[var(--color-primary)]">{formatPrice(basePrice * quantity, basePriceUsd ? basePriceUsd * quantity : undefined)}</span>
                                 </div>
                                 <div className="flex justify-between items-center pt-2">
                                     <span className="text-lg font-black text-white uppercase tracking-wider">{t("checkout.total")}</span>
-                                    <span className="text-2xl font-black text-[var(--color-primary)] text-glow">{formatPrice(total)}</span>
+                                    <span className="text-2xl font-black text-[var(--color-primary)] text-glow">{formatPrice(basePrice * quantity, basePriceUsd ? basePriceUsd * quantity : undefined)}</span>
                                 </div>
                             </div>
 
@@ -122,7 +116,7 @@ export function CheckoutModal({ isOpen, onClose, product, selectedTier, regionMu
                                     {t("checkout.contact_to_buy") || "Для покупки свяжитесь с нами"}
                                 </p>
                                 <a
-                                    href={`https://t.me/howiecheats?text=${encodeURIComponent(orderText + ' — ' + formatPrice(total))}`}
+                                    href={`https://t.me/howiecheats?text=${encodeURIComponent(orderText)}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="w-full py-4 rounded bg-[#2AABEE] text-white font-black uppercase tracking-widest text-sm hover:bg-[#229ED9] transition-all shadow-[0_0_20px_rgba(42,171,238,0.2)] flex items-center justify-center gap-3"
