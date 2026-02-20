@@ -15,6 +15,7 @@ export const metadata: Metadata = {
 };
 
 import { I18nProvider } from "@/lib/i18n";
+import { PageLoader } from "@/components/PageLoader";
 
 import VideoBackground from "@/components/VideoBackground";
 import BackgroundMusic from "@/components/BackgroundMusic";
@@ -27,6 +28,7 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <body className={`${inter.variable} ${playfair.variable} antialiased font-sans bg-black/90 text-gray-200 selection:bg-[#C6A87C] selection:text-black`}>
+        <PageLoader />
         <I18nProvider>
           <div className="relative flex flex-col min-h-screen">
             <VideoBackground />
