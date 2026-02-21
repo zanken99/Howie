@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { settings } from "@/lib/products-data";
 
 type Language = "ru" | "en";
 
@@ -285,7 +286,7 @@ const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
     const [language, setLanguage] = useState<Language>("ru");
-    const [exchangeRate, setExchangeRate] = useState<number>(0.0108); // Fallback: 1 RUB = 0.0108 USD (approx 92 RUB/USD)
+    const [exchangeRate, setExchangeRate] = useState<number>(settings?.exchangeRate ? (1 / settings.exchangeRate) : 0.0108); // Initialized from settings or fallback
 
     useEffect(() => {
         const saved = localStorage.getItem("language") as Language;
@@ -297,11 +298,11 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
         const detectRegion = async () => {
             if (saved) return; // Already chose a language
 
-            try {
-                // Check browser language
-                const browserLang = navigator.language.toLowerCase();
-                const isRuBrowser = browserLang.includes('ru') || browserLang.includes('be') || browserLang.includes('kk') || browserLang.includes('uk');
+            // Check browser language
+            const browserLang = (navigator.language || "").toLowerCase();
+            const isRuBrowser = browserLang.includes('ru') || browserLang.includes('be') || browserLang.includes('kk') || browserLang.includes('uk');
 
+            try {
                 // Check IP location
                 const res = await fetch("https://ipapi.co/json/");
                 const data = await res.json();
@@ -320,11 +321,25 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
                     console.log("Auto-detected RU/CIS region (ru)");
                 }
             } catch (err) {
-                console.error("Failed to detect region, defaulting to ru", err);
+                console.error("Failed to detect region, relying on browser language fallback", err);
+                if (isRuBrowser) {
+                    setLanguage("ru");
+                    localStorage.setItem("language", "ru");
+                    console.log("Auto-detected RU/CIS browser fallback (ru)");
+                } else {
+                    setLanguage("en");
+                    localStorage.setItem("language", "en");
+                    console.log("Auto-detected World browser fallback (en)");
+                }
             }
         };
 
         const fetchRate = async () => {
+            // Only fetch if no exchange rate is set in settings
+            if (settings && settings.exchangeRate && settings.exchangeRate > 0) {
+                setExchangeRate(1 / settings.exchangeRate);
+                return;
+            }
             try {
                 const res = await fetch("https://api.frankfurter.app/latest?from=RUB&to=USD");
                 const data = await res.json();
