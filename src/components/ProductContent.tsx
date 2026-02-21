@@ -20,6 +20,7 @@ export function ProductContent({ product }: ProductContentProps) {
     const [selectedTier, setSelectedTier] = useState(product.priceTiers[0]);
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+    const [isDescOpen, setIsDescOpen] = useState(true);
 
     const closeLightbox = useCallback(() => setLightboxIndex(null), []);
     const prevImage = useCallback(() => {
@@ -67,27 +68,6 @@ export function ProductContent({ product }: ProductContentProps) {
 
                     {/* Left Column: Image & Status */}
                     <div className="lg:col-span-1 space-y-6">
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="rounded-2xl overflow-hidden bg-[var(--color-surface)] border border-white/5 aspect-square flex items-center justify-center relative group"
-                        >
-                            <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-primary)]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                            <span className="text-8xl select-none group-hover:scale-110 transition-transform duration-500">🎮</span>
-
-                            {/* Status Badge */}
-                            <div className="absolute top-4 left-4">
-                                <div className={`px-3 py-1 rounded-full border backdrop-blur-md flex items-center gap-2 ${product.status === 'undetected'
-                                    ? 'bg-[var(--color-primary)]/10 border-[var(--color-primary)]/30 text-[var(--color-primary)]'
-                                    : 'bg-[var(--color-error)]/10 border-[var(--color-error)]/30 text-[var(--color-error)]'
-                                    }`}>
-                                    <span className={`w-2 h-2 rounded-full ${product.status === 'undetected' ? 'bg-[var(--color-primary)] animate-pulse' : 'bg-[var(--color-error)]'}`} />
-                                    <span className="text-xs font-bold uppercase tracking-wider">
-                                        {product.status === 'undetected' ? 'Undetected' : product.status === 'updating' ? 'Updating' : 'Detected'}
-                                    </span>
-                                </div>
-                            </div>
-                        </motion.div>
 
                         {/* Quick Specs */}
                         <div className="glass-panel p-6 space-y-4">
@@ -106,13 +86,29 @@ export function ProductContent({ product }: ProductContentProps) {
                     {/* Right Column: Info & Purchase */}
                     <div className="lg:col-span-2 space-y-8">
                         <div>
-                            <motion.h1
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                className="text-4xl sm:text-5xl font-black text-white mb-4"
-                            >
-                                {product.name}
-                            </motion.h1>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
+                                <motion.h1
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    className="text-4xl sm:text-5xl font-black text-white"
+                                >
+                                    {product.name}
+                                </motion.h1>
+
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className={`px-4 py-1.5 rounded-full border backdrop-blur-md flex items-center gap-2 w-fit ${product.status === 'undetected'
+                                        ? 'bg-[var(--color-primary)]/10 border-[var(--color-primary)]/30 text-[var(--color-primary)]'
+                                        : 'bg-[var(--color-error)]/10 border-[var(--color-error)]/30 text-[var(--color-error)]'
+                                        }`}
+                                >
+                                    <span className={`w-2 h-2 rounded-full ${product.status === 'undetected' ? 'bg-[var(--color-primary)] animate-pulse' : 'bg-[var(--color-error)]'}`} />
+                                    <span className="text-sm font-bold uppercase tracking-wider">
+                                        {product.status === 'undetected' ? 'Undetected' : product.status === 'updating' ? 'Updating' : 'Detected'}
+                                    </span>
+                                </motion.div>
+                            </div>
 
                             {/* Gallery */}
                             {product.galleryImages && product.galleryImages.length > 0 && (
@@ -328,17 +324,36 @@ export function ProductContent({ product }: ProductContentProps) {
                             transition={{ delay: 0.1 }}
                             className="border border-white/10 rounded-xl overflow-hidden bg-white/5"
                         >
-                            <details className="group" open>
-                                <summary className="flex items-center justify-between p-4 cursor-pointer select-none hover:bg-white/5 transition-colors">
+                            <div className="group">
+                                <div
+                                    onClick={() => setIsDescOpen(!isDescOpen)}
+                                    className="flex items-center justify-between p-4 cursor-pointer select-none hover:bg-white/5 transition-colors"
+                                >
                                     <span className="font-bold text-lg text-white">{t("prod.desc")}</span>
-                                    <span className="text-[var(--color-primary)] transform group-open:rotate-180 transition-transform duration-300">
+                                    <motion.span
+                                        animate={{ rotate: isDescOpen ? 180 : 0 }}
+                                        transition={{ duration: 0.3 }}
+                                        className="text-[var(--color-primary)]"
+                                    >
                                         ▼
-                                    </span>
-                                </summary>
-                                <div className="p-4 pt-0 text-gray-400 leading-relaxed whitespace-pre-wrap border-t border-white/5">
-                                    {product.description}
+                                    </motion.span>
                                 </div>
-                            </details>
+                                <AnimatePresence initial={false}>
+                                    {isDescOpen && (
+                                        <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: "auto", opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            transition={{ duration: 0.3, ease: "easeInOut" }}
+                                            className="overflow-hidden"
+                                        >
+                                            <div className="p-4 pt-0 text-gray-400 leading-relaxed whitespace-pre-wrap border-t border-white/5">
+                                                {product.description}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
                         </motion.div>
 
                     </div>

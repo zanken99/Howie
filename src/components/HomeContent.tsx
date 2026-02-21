@@ -20,16 +20,25 @@ export function HomeContent({ games, recommended, featuredGames, reviews }: Home
     const [currentIndex, setCurrentIndex] = useState(0);
     const [reviewIndex, setReviewIndex] = useState(0);
     const [featuredPage, setFeaturedPage] = useState(0);
+    const [displayRecommended, setDisplayRecommended] = useState<Product[]>(recommended.slice(0, 10));
+
+    // Shuffle products on client-side to prevent Next.js hydration mismatch
+    useEffect(() => {
+        if (recommended.length > 0) {
+            const shuffled = [...recommended].sort(() => 0.5 - Math.random());
+            setDisplayRecommended(shuffled.slice(0, 10));
+        }
+    }, [recommended]);
 
     // Auto-scroll carousel
     useEffect(() => {
-        if (recommended.length > 0) {
+        if (displayRecommended.length > 0) {
             const timer = setInterval(() => {
-                setCurrentIndex((prev) => (prev + 1) % recommended.length);
+                setCurrentIndex((prev) => (prev + 1) % displayRecommended.length);
             }, 5000);
             return () => clearInterval(timer);
         }
-    }, [recommended.length]);
+    }, [displayRecommended.length]);
 
     const containerVariants = {
         hidden: { opacity: 0 },
@@ -162,10 +171,10 @@ export function HomeContent({ games, recommended, featuredGames, reviews }: Home
                                     >
                                         {/* Cover Image */}
                                         <div className="relative w-full h-44 overflow-hidden">
-                                            {recommended[currentIndex]?.coverImage ? (
+                                            {displayRecommended[currentIndex]?.coverImage ? (
                                                 <img
-                                                    src={recommended[currentIndex].coverImage}
-                                                    alt={recommended[currentIndex]?.name}
+                                                    src={displayRecommended[currentIndex].coverImage}
+                                                    alt={displayRecommended[currentIndex]?.name}
                                                     className="w-full h-full object-cover"
                                                 />
                                             ) : (
@@ -181,7 +190,7 @@ export function HomeContent({ games, recommended, featuredGames, reviews }: Home
                                                 <div className="px-2.5 py-1 bg-black/60 backdrop-blur-md border border-[#c6a87c]/40 rounded-full flex items-center gap-1.5">
                                                     <span className="w-1.5 h-1.5 rounded-full bg-[#c6a87c] animate-pulse" />
                                                     <span className="text-[9px] font-bold uppercase tracking-widest text-[#c6a87c]">
-                                                        {recommended[currentIndex]?.status === "undetected" ? "UD" : "DET"}
+                                                        {displayRecommended[currentIndex]?.status === "undetected" ? "UD" : "DET"}
                                                     </span>
                                                 </div>
                                             </div>
@@ -198,17 +207,17 @@ export function HomeContent({ games, recommended, featuredGames, reviews }: Home
                                         <div className="px-5 pt-4 pb-5 flex flex-col flex-grow">
                                             {/* Game tag */}
                                             <div className="text-[10px] text-[#c6a87c]/60 uppercase tracking-[0.25em] font-bold mb-1.5">
-                                                {recommended[currentIndex]?.game}
+                                                {displayRecommended[currentIndex]?.game}
                                             </div>
 
                                             {/* Product name */}
                                             <h3 className="text-xl font-[family-name:var(--font-display)] text-white font-black uppercase tracking-tight leading-tight mb-3">
-                                                {recommended[currentIndex]?.name}
+                                                {displayRecommended[currentIndex]?.name}
                                             </h3>
 
                                             {/* Feature pills */}
                                             <div className="flex flex-wrap gap-1.5 mb-5">
-                                                {recommended[currentIndex]?.features.slice(0, 4).map((feat, i) => (
+                                                {displayRecommended[currentIndex]?.features.slice(0, 4).map((feat, i) => (
                                                     <span
                                                         key={i}
                                                         className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider bg-[#c6a87c]/10 border border-[#c6a87c]/20 text-[#c6a87c]/80 rounded"
@@ -223,7 +232,7 @@ export function HomeContent({ games, recommended, featuredGames, reviews }: Home
 
                                             {/* Bottom bar */}
                                             <div className="flex items-center justify-between gap-3">
-                                                <Link href={`/product/${recommended[currentIndex]?.id}`} className="flex-grow">
+                                                <Link href={`/product/${displayRecommended[currentIndex]?.id}`} className="flex-grow">
                                                     <button className="w-full bg-gradient-to-r from-[#c6a87c] to-[#a8895c] hover:from-[#d4b88a] hover:to-[#b89a6a] text-[#0a0a0a] py-2.5 px-4 rounded-lg font-[family-name:var(--font-display)] font-black uppercase tracking-[0.15em] text-[11px] transition-all shadow-lg shadow-[#c6a87c]/20 hover:shadow-[#c6a87c]/30 hover:-translate-y-0.5 active:translate-y-0 relative overflow-hidden group">
                                                         <span className="relative z-10">{t("rec.inspect")}</span>
                                                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
@@ -232,7 +241,7 @@ export function HomeContent({ games, recommended, featuredGames, reviews }: Home
                                                 <div className="text-right shrink-0">
                                                     <div className="text-[9px] text-gray-500 uppercase tracking-widest font-bold">{t("prod.from")}</div>
                                                     <div className="text-lg font-[family-name:var(--font-display)] text-[#c6a87c] font-black leading-none">
-                                                        {formatPrice(recommended[currentIndex]?.priceTiers[0].price)}
+                                                        {formatPrice(displayRecommended[currentIndex]?.priceTiers[0].price)}
                                                     </div>
                                                 </div>
                                             </div>
@@ -242,7 +251,7 @@ export function HomeContent({ games, recommended, featuredGames, reviews }: Home
 
                                 {/* Carousel dots */}
                                 <div className="flex gap-2 justify-center pb-4">
-                                    {recommended.slice(0, 5).map((_, i) => (
+                                    {displayRecommended.slice(0, 5).map((_, i) => (
                                         <button
                                             key={i}
                                             onClick={() => setCurrentIndex(i)}
@@ -402,16 +411,16 @@ export function HomeContent({ games, recommended, featuredGames, reviews }: Home
                     </motion.div>
 
                     <motion.div
-                        variants={containerVariants}
-                        initial="hidden"
-                        whileInView="visible"
+                        initial={{ opacity: 0 }}
+                        whileInView={{ opacity: 1 }}
+                        transition={{ duration: 0.5 }}
                         viewport={{ once: true }}
                         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
                     >
                         {games.map((game) => (
-                            <motion.div key={game.name} variants={itemVariants}>
+                            <div key={game.name}>
                                 <GameCard name={game.name} count={game.count} />
-                            </motion.div>
+                            </div>
                         ))}
                     </motion.div>
                 </div>
