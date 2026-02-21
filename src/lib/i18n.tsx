@@ -332,13 +332,19 @@ export function I18nProvider({ children, region }: { children: React.ReactNode, 
     };
 
     const formatPrice = (amountInRub: number, exactUsd?: number) => {
-        if (typedRegion === "world" || language === "en") {
-            if (exactUsd !== undefined) {
+        if (typedRegion === "world") {
+            // World uses literal USD set in admin panel, fallback to conversion if none set
+            if (exactUsd !== undefined && exactUsd > 0) {
                 return `$${exactUsd.toFixed(2)}`;
             }
             const converted = amountInRub * exchangeRate;
             return `$${converted.toFixed(2)}`;
+        } else if (language === "en") {
+            // RU region, English language -> converted from RUB
+            const converted = amountInRub * exchangeRate;
+            return `$${converted.toFixed(2)}`;
         } else {
+            // RU region, Russian language -> RUB
             return `${amountInRub} ₽`;
         }
     };

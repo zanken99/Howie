@@ -200,6 +200,10 @@ export default function AdminPage() {
   const [editReview, setEditReview] = useState<EditReview | null>(null);
   const [isNewReview, setIsNewReview] = useState(false);
 
+  // Duplicate product
+  const [dupProd, setDupProd] = useState<Product | null>(null);
+  const [dupTargetGameId, setDupTargetGameId] = useState("");
+
   // Save status
   const [saveMsg, setSaveMsg] = useState("");
 
@@ -293,6 +297,26 @@ export default function AdminPage() {
     if (confirm("Удалить чит?")) {
       setProductList(prev => prev.filter(p => p.id !== id));
     }
+  };
+  const openDuplicate = (p: Product) => {
+    setDupProd(p);
+    setDupTargetGameId("");
+  };
+  const confirmDuplicate = () => {
+    if (!dupProd || !dupTargetGameId) return;
+    const targetGame = gameList.find(g => g.id === dupTargetGameId);
+    if (!targetGame) return;
+    const newProd: Product = {
+      ...dupProd,
+      id: `prod-${Date.now()}`,
+      gameId: dupTargetGameId,
+      game: targetGame.name,
+      createdAt: new Date().toISOString(),
+      lastUpdate: new Date().toLocaleString("ru"),
+    };
+    setProductList(prev => [...prev, newProd]);
+    setDupProd(null);
+    setSaveMsg("✅ Товар дублирован в игру: " + targetGame.name);
   };
   const updateTierPrice = (idx: number, field: keyof PriceTier, value: string | number) => {
     if (!editProd) return;
@@ -587,6 +611,9 @@ export default function AdminPage() {
                   <div className="flex gap-2 pt-2 border-t border-white/5">
                     <button onClick={() => openEditProd(p)} className="flex-1 px-3 py-2 rounded-lg bg-blue-500/10 text-blue-400 font-bold text-sm hover:bg-blue-500/20">
                       ✏️ Ред.
+                    </button>
+                    <button onClick={() => openDuplicate(p)} className="px-3 py-2 rounded-lg bg-purple-500/10 text-purple-400 font-bold text-sm hover:bg-purple-500/20">
+                      📋 Дубл.
                     </button>
                     <button onClick={() => deleteProd(p.id)} className="px-3 py-2 rounded-lg bg-red-500/10 text-red-400 font-bold text-sm hover:bg-red-500/20">
                       🗑️
@@ -896,6 +923,42 @@ export default function AdminPage() {
               <div className="flex gap-3 mt-6 pt-4 border-t border-white/10">
                 <button onClick={() => setEditProd(null)} className="flex-1 py-3 rounded-xl bg-white/5 text-gray-400 font-bold hover:bg-white/10">Отмена</button>
                 <button onClick={saveProd} className="flex-1 py-3 rounded-xl bg-[var(--color-primary)] text-white font-bold hover:bg-[var(--color-secondary)]">💾 Сохранить</button>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Duplicate Product Modal */}
+        {dupProd && (
+          <>
+            <div className="fixed inset-0 bg-black/80 z-50 backdrop-blur-sm" onClick={() => setDupProd(null)} />
+            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[90vw] max-w-md bg-[#1a1a1f] border border-white/10 rounded-2xl p-6 shadow-2xl">
+              <h2 className="text-2xl font-black text-white mb-4">📋 Дублировать чит</h2>
+              <p className="text-sm text-gray-400 mb-6">Создает точную копию чита <strong>"{dupProd.name}"</strong>.</p>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm text-gray-400 font-bold block mb-1">Выберите игру для копии</label>
+                  <select
+                    value={dupTargetGameId}
+                    onChange={e => setDupTargetGameId(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white"
+                  >
+                    <option value="">-- Выбрать --</option>
+                    {gameList.map(g => (<option key={g.id} value={g.id}>{g.name}</option>))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6 pt-4 border-t border-white/10">
+                <button onClick={() => setDupProd(null)} className="flex-1 py-3 rounded-xl bg-white/5 text-gray-400 font-bold hover:bg-white/10">Отмена</button>
+                <button
+                  onClick={confirmDuplicate}
+                  disabled={!dupTargetGameId}
+                  className="flex-1 py-3 rounded-xl bg-[var(--color-primary)] text-white font-bold hover:bg-[var(--color-secondary)] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  💾 Создать дубликат
+                </button>
               </div>
             </div>
           </>
