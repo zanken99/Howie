@@ -12,7 +12,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const { t, formatPrice } = useI18n();
+  const { t, formatPrice, region } = useI18n();
   const isUndetected = product.status === "undetected";
 
   return (
@@ -83,7 +83,7 @@ export function ProductCard({ product }: ProductCardProps) {
               {formatPrice(product.priceTiers[0].price, product.priceTiers[0].priceUsd)}
             </span>
           </div>
-          <Link href={`/product/${product.id}`}>
+          <Link href={`/${region}/product/${product.id}`}>
             <button className="shelby-button text-xs">
               {t("prod.details")}
             </button>

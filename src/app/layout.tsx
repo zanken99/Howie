@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
 
 const inter = Inter({ subsets: ["latin", "cyrillic"], variable: "--font-inter" });
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair" });
@@ -14,12 +12,6 @@ export const metadata: Metadata = {
   keywords: ["cheats", "hacks", "game cheats", "undetected", "aimbot", "esp", "wallhack"],
 };
 
-import { I18nProvider } from "@/lib/i18n";
-import { PageLoader } from "@/components/PageLoader";
-
-import VideoBackground from "@/components/VideoBackground";
-import BackgroundMusic from "@/components/BackgroundMusic";
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -28,16 +20,7 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <body className={`${inter.variable} ${playfair.variable} antialiased font-sans bg-black/90 text-gray-200 selection:bg-[#C6A87C] selection:text-black`}>
-        <PageLoader />
-        <I18nProvider>
-          <div className="relative flex flex-col min-h-screen">
-            <VideoBackground />
-            <BackgroundMusic />
-            <Header />
-            <main className="flex-grow z-10">{children}</main>
-            <Footer />
-          </div>
-        </I18nProvider>
+        {children}
       </body>
     </html>
   );

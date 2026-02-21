@@ -36,3 +36,5 @@ Thumbs.db
 /scripts/
 /build.bat
 /ИНСТРУКЦИЯ.md
+build.log
+tsconfig.tsbuildinfo

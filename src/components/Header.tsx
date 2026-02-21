@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { useI18n } from "@/lib/i18n";
 
 export function Header() {
-  const { language, setLanguage, t } = useI18n();
+  const { language, setLanguage, t, region } = useI18n();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -16,9 +16,9 @@ export function Header() {
   }, []);
 
   const navLinks = [
-    { href: "/#games", label: t("nav.catalog") },
-    { href: "/faq", label: t("nav.faq") },
-    { href: "/guarantees", label: t("nav.guarantees") },
+    { href: `/${region}/#games`, label: t("nav.catalog") },
+    { href: `/${region}/faq`, label: t("nav.faq") },
+    { href: `/${region}/guarantees`, label: t("nav.guarantees") },
     { href: "https://t.me/HowieCheat_bot", label: t("nav.support") },
   ];
 
@@ -31,7 +31,7 @@ export function Header() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 group relative top-2">
+        <Link href={`/${region}`} className="flex items-center gap-3 group relative top-2">
           <div className="relative w-28 h-28 flex items-center justify-center transition-all group-hover:scale-105">
             <img src="/media/logo.png" alt="HowieCheats Logo" className="w-full h-full object-contain" />
           </div>

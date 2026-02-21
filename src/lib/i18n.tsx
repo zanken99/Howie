@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { settings } from "@/lib/products-data";
 
+export type Region = "ru" | "world";
 type Language = "ru" | "en";
 
 interface I18nContextType {
@@ -11,6 +12,7 @@ interface I18nContextType {
     t: (key: string) => string;
     formatPrice: (amountInRub: number, exactUsd?: number) => string;
     exchangeRate: number;
+    region: Region;
 }
 
 const translations: Record<Language, Record<string, string>> = {
@@ -284,58 +286,23 @@ const translations: Record<Language, Record<string, string>> = {
 
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
-export function I18nProvider({ children }: { children: React.ReactNode }) {
-    const [language, setLanguage] = useState<Language>("ru");
-    const [exchangeRate, setExchangeRate] = useState<number>(settings?.exchangeRate ? (1 / settings.exchangeRate) : 0.0108); // Initialized from settings or fallback
+export function I18nProvider({ children, region }: { children: React.ReactNode, region: string }) {
+    const typedRegion = region as Region;
+    const defaultLang = typedRegion === "world" ? "en" : "ru";
+    const [language, setLanguage] = useState<Language>(defaultLang);
+    const [exchangeRate, setExchangeRate] = useState<number>(settings?.exchangeRate ? (1 / settings.exchangeRate) : 0.0108);
 
     useEffect(() => {
+        if (typedRegion === "world") {
+            setLanguage("en");
+            return;
+        }
         const saved = localStorage.getItem("language") as Language;
         if (saved && (saved === "ru" || saved === "en")) {
             setLanguage(saved);
         }
 
-        // Auto-detect region if first time
-        const detectRegion = async () => {
-            if (saved) return; // Already chose a language
-
-            // Check browser language
-            const browserLang = (navigator.language || "").toLowerCase();
-            const isRuBrowser = browserLang.includes('ru') || browserLang.includes('be') || browserLang.includes('kk') || browserLang.includes('uk');
-
-            try {
-                // Check IP location
-                const res = await fetch("https://ipapi.co/json/");
-                const data = await res.json();
-
-                const cisCountries = ['RU', 'BY', 'KZ', 'UA', 'AM', 'AZ', 'KG', 'MD', 'TJ', 'UZ'];
-                const isCisIp = data.country && cisCountries.includes(data.country);
-
-                // If neither IP nor Browser is RU/CIS, set to English
-                if (!isCisIp && !isRuBrowser) {
-                    setLanguage("en");
-                    localStorage.setItem("language", "en");
-                    console.log("Auto-detected World region (en)");
-                } else {
-                    setLanguage("ru");
-                    localStorage.setItem("language", "ru");
-                    console.log("Auto-detected RU/CIS region (ru)");
-                }
-            } catch (err) {
-                console.error("Failed to detect region, relying on browser language fallback", err);
-                if (isRuBrowser) {
-                    setLanguage("ru");
-                    localStorage.setItem("language", "ru");
-                    console.log("Auto-detected RU/CIS browser fallback (ru)");
-                } else {
-                    setLanguage("en");
-                    localStorage.setItem("language", "en");
-                    console.log("Auto-detected World browser fallback (en)");
-                }
-            }
-        };
-
         const fetchRate = async () => {
-            // Only fetch if no exchange rate is set in settings
             if (settings && settings.exchangeRate && settings.exchangeRate > 0) {
                 setExchangeRate(1 / settings.exchangeRate);
                 return;
@@ -352,10 +319,10 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
         };
 
         fetchRate();
-        detectRegion();
-    }, []);
+    }, [typedRegion]);
 
     const handleSetLanguage = (lang: Language) => {
+        if (typedRegion === "world") return; // Force English in /world
         setLanguage(lang);
         localStorage.setItem("language", lang);
     };
@@ -365,21 +332,19 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     };
 
     const formatPrice = (amountInRub: number, exactUsd?: number) => {
-        if (language === "ru") {
-            return `${amountInRub} ₽`;
-        } else {
-            // If we have an exact USD price defined, use it
+        if (typedRegion === "world" || language === "en") {
             if (exactUsd !== undefined) {
                 return `$${exactUsd.toFixed(2)}`;
             }
-            // Otherwise fallback to dynamic conversion
             const converted = amountInRub * exchangeRate;
             return `$${converted.toFixed(2)}`;
+        } else {
+            return `${amountInRub} ₽`;
         }
     };
 
     return (
-        <I18nContext.Provider value={{ language, setLanguage: handleSetLanguage, t, formatPrice, exchangeRate }}>
+        <I18nContext.Provider value={{ language, setLanguage: handleSetLanguage, t, formatPrice, exchangeRate, region: typedRegion }}>
             {children}
         </I18nContext.Provider>
     );

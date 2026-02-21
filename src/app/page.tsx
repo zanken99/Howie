@@ -1,27 +1,34 @@
-import { getGames, getFeaturedGames, getProducts, getReviews } from "@/lib/products-data";
-import { HomeContent } from "@/components/HomeContent";
+"use client";
 
-export default function HomePage() {
-    const games = getGames();
-    const products = getProducts();
-    const featuredGames = getFeaturedGames();
-    const reviews = getReviews();
+import { useEffect } from "react";
 
-    // Create count summary
-    const gameCounts = games.map(g => ({
-        name: g.name,
-        count: products.filter(p => p.gameId === g.id).length
-    }));
-
-    // Pass all undetected products to the client to shuffle
-    const recommended = products.filter(p => p.status === 'undetected');
+export default function RootRedirect() {
+    useEffect(() => {
+        const detectRegion = async () => {
+            try {
+                const res = await fetch("https://ipapi.co/json/");
+                const data = await res.json();
+                const cisCountries = ["RU", "BY", "KZ", "UA", "UZ", "AM", "AZ", "GE", "MD", "TJ", "KG", "TM"];
+                if (data.country_code && cisCountries.includes(data.country_code)) {
+                    window.location.replace("/ru");
+                } else {
+                    window.location.replace("/world");
+                }
+            } catch (e) {
+                const browserLang = (navigator.language || "").toLowerCase();
+                if (browserLang.includes("ru") || browserLang.includes("uk") || browserLang.includes("be")) {
+                    window.location.replace("/ru");
+                } else {
+                    window.location.replace("/world");
+                }
+            }
+        };
+        detectRegion();
+    }, []);
 
     return (
-        <HomeContent
-            games={gameCounts}
-            recommended={recommended}
-            featuredGames={featuredGames}
-            reviews={reviews}
-        />
+        <div className="min-h-screen flex items-center justify-center bg-black">
+            <div className="w-8 h-8 rounded-full border-2 border-[#c6a87c] border-t-transparent animate-spin" />
+        </div>
     );
 }

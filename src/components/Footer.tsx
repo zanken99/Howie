@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useI18n } from "@/lib/i18n";
 
 export function Footer() {
-  const { t } = useI18n();
+  const { t, region } = useI18n();
 
   return (
     <footer className="relative mt-auto border-t-2 border-white/10 bg-[#0a0a0f]">
@@ -12,7 +12,7 @@ export function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           {/* Brand */}
           <div className="sm:col-span-2 lg:col-span-1">
-            <Link href="/" className="flex items-center gap-3 mb-5 group relative top-2">
+            <Link href={`/${region}`} className="flex items-center gap-3 mb-5 group relative top-2">
               <div className="relative w-28 h-28 flex items-center justify-center transition-all group-hover:scale-105">
                 <img src="/media/logo.png" alt="HowieCheats Logo" className="w-full h-full object-contain" />
               </div>
@@ -34,9 +34,9 @@ export function Footer() {
           <div>
             <h3 className="text-xs font-black text-white uppercase tracking-[0.2em] mb-5 text-[var(--color-primary)] font-[family-name:var(--font-display)]">{t("footer.catalog")}</h3>
             <ul className="space-y-3 text-sm text-gray-400 font-medium">
-              <li><Link href="/#games" className="hover:text-[var(--color-primary)] transition-colors">{t("footer.all_products")}</Link></li>
-              <li><Link href="/legal/terms" className="hover:text-[var(--color-primary)] transition-colors">{t("footer.offer")}</Link></li>
-              <li><Link href="/legal/privacy" className="hover:text-[var(--color-primary)] transition-colors">{t("footer.privacy")}</Link></li>
+              <li><Link href={`/${region}/#games`} className="hover:text-[var(--color-primary)] transition-colors">{t("footer.all_products")}</Link></li>
+              <li><Link href={`/${region}/legal/terms`} className="hover:text-[var(--color-primary)] transition-colors">{t("footer.offer")}</Link></li>
+              <li><Link href={`/${region}/legal/privacy`} className="hover:text-[var(--color-primary)] transition-colors">{t("footer.privacy")}</Link></li>
             </ul>
           </div>
 
@@ -44,8 +44,8 @@ export function Footer() {
           <div>
             <h3 className="text-xs font-black text-white uppercase tracking-[0.2em] mb-5 text-[var(--color-primary)] font-[family-name:var(--font-display)]">{t("footer.support")}</h3>
             <ul className="space-y-3 text-sm text-gray-400 font-medium">
-              <li><Link href="/faq" className="hover:text-[var(--color-primary)] transition-colors">FAQ</Link></li>
-              <li><Link href="/guarantees" className="hover:text-[var(--color-primary)] transition-colors">{t("nav.guarantees")}</Link></li>
+              <li><Link href={`/${region}/faq`} className="hover:text-[var(--color-primary)] transition-colors">FAQ</Link></li>
+              <li><Link href={`/${region}/guarantees`} className="hover:text-[var(--color-primary)] transition-colors">{t("nav.guarantees")}</Link></li>
               <li><a href="https://t.me/HowieCheat_bot" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--color-primary)] transition-colors">{t("nav.support")}</a></li>
               <li><a href="https://discord.gg/howiecheat" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--color-primary)] transition-colors">Discord Support</a></li>
             </ul>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Product } from "@/lib/products-data";
+import { Product, RegionPrice } from "@/lib/products-data";
 import { formatDuration } from "@/lib/format-duration";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -16,11 +16,33 @@ interface ProductContentProps {
 }
 
 export function ProductContent({ product }: ProductContentProps) {
-    const { t, formatPrice } = useI18n();
+    const { t, formatPrice, region } = useI18n();
     const [selectedTier, setSelectedTier] = useState(product.priceTiers[0]);
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
     const [isDescOpen, setIsDescOpen] = useState(true);
+
+    const [selectedRegionPrice, setSelectedRegionPrice] = useState<RegionPrice | undefined>(
+        region === 'world' && product.regionPricing && product.regionPricing.length > 0
+            ? product.regionPricing[0]
+            : undefined
+    );
+
+    const getMultiplier = () => {
+        if (region === 'world' && selectedRegionPrice) {
+            return selectedRegionPrice.priceMultiplier;
+        }
+        return 1;
+    };
+
+    const getPrice = (tier: typeof selectedTier) => tier.price * getMultiplier();
+    const getPriceUsd = (tier: typeof selectedTier) => tier.priceUsd ? tier.priceUsd * getMultiplier() : undefined;
+
+    const actualTier = {
+        ...selectedTier,
+        price: getPrice(selectedTier),
+        priceUsd: getPriceUsd(selectedTier)
+    };
 
     const closeLightbox = useCallback(() => setLightboxIndex(null), []);
     const prevImage = useCallback(() => {
@@ -51,15 +73,15 @@ export function ProductContent({ product }: ProductContentProps) {
                 isOpen={isCheckoutOpen}
                 onClose={() => setIsCheckoutOpen(false)}
                 product={product}
-                selectedTier={selectedTier}
+                selectedTier={actualTier}
             />
             <div className="max-w-7xl mx-auto px-4 sm:px-6">
 
                 {/* Breadcrumbs */}
                 <div className="flex items-center gap-2 text-sm text-gray-400 mb-8">
-                    <Link href="/" className="hover:text-white transition-colors">{t("nav.home")}</Link>
+                    <Link href={`/${region}`} className="hover:text-white transition-colors">{t("nav.home")}</Link>
                     <span>/</span>
-                    <Link href="/#games" className="hover:text-white transition-colors">{t("nav.catalog")}</Link>
+                    <Link href={`/${region}/#games`} className="hover:text-white transition-colors">{t("nav.catalog")}</Link>
                     <span>/</span>
                     <span className="text-[var(--color-primary)]">{product.name}</span>
                 </div>
@@ -271,11 +293,33 @@ export function ProductContent({ product }: ProductContentProps) {
                             </div>
                         </div>
 
-                        {/* Purchase Section */}
                         <div className="glass-panel p-8 border-[var(--color-primary)]/20 shadow-[0_0_50px_-20px_rgba(59,130,246,0.2)]">
                             <h3 className="text-xl font-bold text-white mb-6">{t("prod.choose_tier")}</h3>
 
-                            <div className="grid grid-cols-3 gap-4 mb-8">
+                            {/* REGION SELECTOR FOR WORLD */}
+                            {region === 'world' && product.regionPricing && product.regionPricing.length > 0 && (
+                                <div className="mb-6">
+                                    <label className="block text-sm font-bold text-gray-400 mb-3 uppercase tracking-widest">
+                                        Select Region
+                                    </label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {product.regionPricing.map((rp, idx) => (
+                                            <button
+                                                key={idx}
+                                                onClick={() => setSelectedRegionPrice(rp)}
+                                                className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border ${selectedRegionPrice?.region === rp.region
+                                                        ? 'bg-[var(--color-primary)]/20 border-[var(--color-primary)] text-white shadow-[0_0_15px_rgba(198,168,124,0.3)]'
+                                                        : 'bg-white/5 border-white/10 text-gray-400 hover:border-[var(--color-primary)]/50'
+                                                    }`}
+                                            >
+                                                {rp.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
                                 {product.priceTiers.map((tier, idx) => (
                                     <button
                                         key={idx}
@@ -291,7 +335,7 @@ export function ProductContent({ product }: ProductContentProps) {
                                         </span>
                                         <span className={`text-2xl font-[family-name:var(--font-playfair)] ${selectedTier === tier ? 'text-[var(--color-primary)] text-glow' : 'text-white'
                                             }`}>
-                                            {formatPrice(tier.price, tier.priceUsd)}
+                                            {formatPrice(getPrice(tier), getPriceUsd(tier))}
                                         </span>
                                     </button>
                                 ))}
@@ -302,7 +346,7 @@ export function ProductContent({ product }: ProductContentProps) {
                                     {t("prod.selected_tier")} <span className="text-white font-bold">{formatDuration(selectedTier.duration, t)}</span>
                                 </div>
                                 <div className="text-3xl font-black text-white">
-                                    {formatPrice(selectedTier.price, selectedTier.priceUsd)}
+                                    {formatPrice(getPrice(selectedTier), getPriceUsd(selectedTier))}
                                 </div>
                             </div>
 

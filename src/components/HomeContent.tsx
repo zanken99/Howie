@@ -16,7 +16,7 @@ interface HomeContentProps {
 }
 
 export function HomeContent({ games, recommended, featuredGames, reviews }: HomeContentProps) {
-    const { t, formatPrice } = useI18n();
+    const { t, formatPrice, region } = useI18n();
     const [currentIndex, setCurrentIndex] = useState(0);
     const [reviewIndex, setReviewIndex] = useState(0);
     const [featuredPage, setFeaturedPage] = useState(0);
@@ -127,7 +127,7 @@ export function HomeContent({ games, recommended, featuredGames, reviews }: Home
                             transition={{ delay: 0.3 }}
                             className="flex flex-wrap gap-3 pt-2"
                         >
-                            <Link href="#games">
+                            <Link href={`/${region}/#games`}>
                                 <button className="shelby-button text-[11px] tracking-[0.2em]">
                                     {t("hero.cta")}
                                 </button>
@@ -232,7 +232,7 @@ export function HomeContent({ games, recommended, featuredGames, reviews }: Home
 
                                             {/* Bottom bar */}
                                             <div className="flex items-center justify-between gap-3">
-                                                <Link href={`/product/${displayRecommended[currentIndex]?.id}`} className="flex-grow">
+                                                <Link href={`/${region}/product/${displayRecommended[currentIndex]?.id}`} className="flex-grow">
                                                     <button className="w-full bg-gradient-to-r from-[#c6a87c] to-[#a8895c] hover:from-[#d4b88a] hover:to-[#b89a6a] text-[#0a0a0a] py-2.5 px-4 rounded-lg font-[family-name:var(--font-display)] font-black uppercase tracking-[0.15em] text-[11px] transition-all shadow-lg shadow-[#c6a87c]/20 hover:shadow-[#c6a87c]/30 hover:-translate-y-0.5 active:translate-y-0 relative overflow-hidden group">
                                                         <span className="relative z-10">{t("rec.inspect")}</span>
                                                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
@@ -281,7 +281,7 @@ export function HomeContent({ games, recommended, featuredGames, reviews }: Home
                             {visibleFeatured.map((game) => (
                                 <Link
                                     key={game.id}
-                                    href={`/game/${slugify(game.name)}`}
+                                    href={`/${region}/game/${slugify(game.name)}`}
                                     className="gold-bar w-full flex items-center gap-4 px-4 py-3 group"
                                 >
                                     <div className="w-7 h-7 rounded bg-[#1a1008] flex items-center justify-center text-[#c6a87c] text-xs font-black border border-[#c6a87c]/20 shadow-inner flex-shrink-0">
@@ -324,10 +324,10 @@ export function HomeContent({ games, recommended, featuredGames, reviews }: Home
                             <Link href="https://t.me/HowieCheat" className="block text-xs text-gray-500 hover:text-[#c6a87c] transition-colors">
                                 {t("home.contacts")}
                             </Link>
-                            <Link href="/legal/privacy" className="block text-xs text-gray-500 hover:text-[#c6a87c] transition-colors">
+                            <Link href={`/${region}/legal/privacy`} className="block text-xs text-gray-500 hover:text-[#c6a87c] transition-colors">
                                 {t("home.privacy")}
                             </Link>
-                            <Link href="/legal/terms" className="block text-xs text-gray-500 hover:text-[#c6a87c] transition-colors">
+                            <Link href={`/${region}/legal/terms`} className="block text-xs text-gray-500 hover:text-[#c6a87c] transition-colors">
                                 {t("home.terms")}
                             </Link>
                         </div>

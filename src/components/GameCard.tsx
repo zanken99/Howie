@@ -11,11 +11,11 @@ interface GameCardProps {
 }
 
 export function GameCard({ name, count }: GameCardProps) {
-    const { t } = useI18n();
+    const { t, region } = useI18n();
     const slug = slugify(name);
 
     return (
-        <Link href={`/game/${slug}`}>
+        <Link href={`/${region}/game/${slug}`}>
             <motion.div
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
