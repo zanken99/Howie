@@ -13,11 +13,8 @@ export default function HomePage() {
         count: products.filter(p => p.gameId === g.id).length
     }));
 
-    // Logic for recommended:
-    // Prefer 'undetected' status, and shuffle or pick first few
-    const recommended = products
-        .filter(p => p.status === 'undetected')
-        .slice(0, 10); // Take up to 10 products for the carousel
+    // Pass all undetected products to the client to shuffle
+    const recommended = products.filter(p => p.status === 'undetected');
 
     return (
         <HomeContent
