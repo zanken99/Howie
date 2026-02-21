@@ -5,6 +5,7 @@ export interface PriceTier {
   label: string;
   duration: string;
   price: number;
+  priceUsd?: number;
 }
 
 export interface RegionPrice {
