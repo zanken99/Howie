@@ -20,6 +20,7 @@ interface EditProduct {
   name: string;
   gameId: string;
   game: string;
+  partner?: string;
   description: string;
   features: string;
   specs: string;
@@ -42,6 +43,7 @@ function toEditProduct(p: Product): EditProduct {
     name: p.name,
     gameId: p.gameId,
     game: p.game,
+    partner: p.partner || "",
     description: p.description,
     features: p.features.join("\n"),
     specs: p.specs.map(s => `${s.label}: ${s.value}`).join("\n"),
@@ -58,6 +60,7 @@ function fromEditProduct(e: EditProduct): Product {
     name: e.name,
     gameId: e.gameId,
     game: e.game,
+    partner: e.partner ? e.partner.trim() : undefined,
     categoryId: "",
     description: e.description,
     features: e.features.split("\n").map(s => s.trim()).filter(Boolean),
@@ -111,6 +114,7 @@ export interface Product {
   name: string;
   gameId: string;
   game: string;
+  partner?: string;
   categoryId: string;
   description: string;
   features: string[];
@@ -189,10 +193,16 @@ export default function AdminPage() {
 
   // Selected game filter for cheats tab
   const [filterGameId, setFilterGameId] = useState("");
+  const [filterPartner, setFilterPartner] = useState("");
 
-  const filteredProducts = filterGameId
-    ? productList.filter(p => p.gameId === filterGameId)
-    : productList;
+  const filteredProducts = productList.filter(p => {
+    if (filterGameId && p.gameId !== filterGameId) return false;
+    if (filterPartner && p.partner !== filterPartner) return false;
+    return true;
+  });
+
+  // Extract unique partners from the product list
+  const uniquePartners = Array.from(new Set(productList.map(p => p.partner).filter(Boolean))) as string[];
 
   // ========== GAME CRUD ==========
   const openNewGame = () => {
@@ -237,6 +247,7 @@ export default function AdminPage() {
       name: "",
       gameId: game?.id || "",
       game: game?.name || "",
+      partner: "",
       description: "",
       features: "",
       specs: "ОС: Windows 10 / 11\nCPU: Intel & AMD",
@@ -504,6 +515,16 @@ export default function AdminPage() {
                   <option key={g.id} value={g.id}>{g.name}</option>
                 ))}
               </select>
+              <select
+                value={filterPartner}
+                onChange={e => setFilterPartner(e.target.value)}
+                className="px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white font-medium"
+              >
+                <option value="">Все партнеры</option>
+                {uniquePartners.map(partner => (
+                  <option key={partner} value={partner}>{partner}</option>
+                ))}
+              </select>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -518,7 +539,10 @@ export default function AdminPage() {
                       )}
                       <div>
                         <h3 className="text-lg font-bold text-white">{p.name}</h3>
-                        <div className="text-xs text-gray-500">{p.game}</div>
+                        <div className="text-xs text-gray-500">
+                          {p.game}
+                          {p.partner && <span className="ml-2 px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400">👤 {p.partner}</span>}
+                        </div>
                       </div>
                     </div>
                     <span className={`text-xs px-2 py-1 rounded-full font-bold uppercase ${p.status === "undetected"
@@ -659,6 +683,12 @@ export default function AdminPage() {
                       <option value="">-- Выбрать --</option>
                       {gameList.map(g => (<option key={g.id} value={g.id}>{g.name}</option>))}
                     </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm text-gray-400 font-bold block mb-1">Партнер</label>
+                    <input value={editProd.partner || ""} onChange={e => setEditProd({ ...editProd, partner: e.target.value })} className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="Имя партнера (опционально)" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">

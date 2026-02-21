@@ -30,6 +30,7 @@ export interface Review {
   rating: number;
   text: string;
   createdAt: string;
+  partner?: string;
 }
 
 export interface Product {
@@ -49,6 +50,7 @@ export interface Product {
   status: "undetected" | "detected" | "updating";
   lastUpdate: string;
   createdAt: string;
+  partner?: string;
 }
 
 export const games: Game[] = [
