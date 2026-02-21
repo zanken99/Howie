@@ -107,6 +107,7 @@ export interface Review {
   rating: number;
   text: string;
   createdAt: string;
+  partner?: string;
 }
 
 export interface Product {
